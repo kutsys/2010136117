@@ -1,52 +1,48 @@
 #include <unistd.h>
-
 #include <sys/stat.h>
-
 #include <fcntl.h>
-
+#include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
-#include <sys/time.h>
-
-#include <unistd.h>
-
-
-
-void LowCopy() {
-
-	char buff_size[1024];
-
-	int in ,out;
-
+int main(int argc, char* argv[])
+{
+	char block[1024];
+	int in, out;
 	int nread;
+	char* copysrc=NULL;
+	char* copydst=NULL;
+	clock_t begin_clock = clock();
+	int printDotTerm = CLOCKS_PER_SEC / 1000;
 
+	if(argc<=1 || argv[1]==NULL)
+		copysrc = "copysrc";
+	else
+		copysrc = argv[1];
+	if(argc<=2 || argv[2]==NULL)
+		copydst = "copied";
+	else
+		copydst = argv[2];
 
-	in = open("test.txt" , O_RDONLY);
+	in = open(copysrc, O_RDONLY);
+	out = open(copydst, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
 
-	out = open("result.txt", O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
-
-	printf("start \n");
-
-
-	while((nread =read(in,buff_size,sizeof(buff_size))) > 0) {
-
-		printf(".");
-
-		write(out,buff_size,nread);	
-
-		sleep(1);	
-
+	if(in==-1 || out==-1){
+		printf(" !! file open error !!\n");
+		exit(-1);
 	}
 
-	printf("\nfinish\n");
+	while((nread=read(in,block,sizeof(block))) > 0){
+		write(out, block, nread);
+		if(clock()-begin_clock >= printDotTerm){
+			putc('.', stdout);
+			fflush(stdout);
+			begin_clock = clock();
+		}
+	}
+	printf("\n");
 
-}
-
-
-int main() {
-
-	LowCopy();	
-
-	return 0;
-
+	close(in); 
+	close(out);
+	exit(0);
 }
